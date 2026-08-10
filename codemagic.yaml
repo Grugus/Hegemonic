@@ -9,15 +9,16 @@ workflows:
     scripts:
       - name: Prepare Web Assets & Capacitor Config
         script: |
-          npm install -g @capacitor/cli@6 @capacitor/core@6
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           mkdir -p www
           cp index.html www/
           
-      - name: Add Android Platform
+      - name: Add Android Platform & Sync
         script: |
           npx cap add android
           
-          # Copy custom icon if available
+          # Copy custom app icon if present
           if [ -f "assets/icon.png" ]; then
             mkdir -p android/app/src/main/res/mipmap-hdpi
             cp assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
