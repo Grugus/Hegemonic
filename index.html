@@ -27,23 +27,24 @@
             flex-direction: column; 
             align-items: center; 
             justify-content: space-between; 
-            padding: 40px 20px; 
-            background: rgba(5, 12, 28, 0.85); 
+            padding: 30px 20px; 
+            background: rgba(5, 12, 28, 0.88); 
             backdrop-filter: blur(10px); 
             color: #fff; 
             z-index: 20; 
         }
         .hidden { display: none !important; }
         
-        h1 { font-size: 26px; font-weight: 900; color: #00e5ff; text-shadow: 0 0 15px #00e5ff; text-align: center; letter-spacing: 1px; }
+        h1 { font-size: 24px; font-weight: 900; color: #00e5ff; text-shadow: 0 0 15px #00e5ff; text-align: center; letter-spacing: 1px; }
         
-        .char-selector { display: flex; gap: 10px; width: 100%; overflow-x: auto; padding: 10px 0; }
+        /* Selectors & Settings */
+        .char-selector, .mode-selector { display: flex; gap: 8px; width: 100%; overflow-x: auto; padding: 6px 0; justify-content: center; }
         .char-card { 
-            flex: 0 0 90px; 
-            height: 110px; 
+            flex: 0 0 75px; 
+            height: 95px; 
             background: #12192c; 
             border: 2px solid #2d3b61; 
-            border-radius: 14px; 
+            border-radius: 12px; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
@@ -51,14 +52,31 @@
             cursor: pointer; 
             transition: 0.15s; 
         }
-        .char-card.selected { border-color: #00ff88; box-shadow: 0 0 18px #00ff88; background: #1a2a4a; transform: scale(1.05); }
+        .char-card.selected { border-color: #00ff88; box-shadow: 0 0 15px #00ff88; background: #1a2a4a; transform: scale(1.04); }
         
+        .opt-btn {
+            padding: 8px 16px;
+            background: #18233c;
+            border: 2px solid #324670;
+            color: #a0c0f0;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .opt-btn.selected {
+            border-color: #ffaa00;
+            color: #fff;
+            background: #3b2a00;
+            box-shadow: 0 0 10px rgba(255,170,0,0.5);
+        }
+
         .btn { 
             background: linear-gradient(45deg, #ff0055, #ff5500); 
             border: none; 
-            padding: 16px 45px; 
+            padding: 14px 35px; 
             color: white; 
-            font-size: 20px; 
+            font-size: 18px; 
             font-weight: 800; 
             border-radius: 30px; 
             cursor: pointer; 
@@ -70,14 +88,14 @@
         
         #hud { 
             position: absolute; 
-            top: 20px; 
+            top: 15px; 
             left: 0; 
             width: 100%; 
             display: flex; 
             justify-content: space-between; 
-            padding: 0 20px; 
+            padding: 0 18px; 
             color: #fff; 
-            font-size: 18px; 
+            font-size: 16px; 
             font-weight: 900; 
             pointer-events: none; 
             z-index: 10; 
@@ -86,7 +104,7 @@
 
         #touch-controls {
             position: absolute;
-            bottom: 25px;
+            bottom: 20px;
             left: 0;
             width: 100%;
             display: flex;
@@ -97,14 +115,14 @@
             pointer-events: auto;
         }
         .ctrl-btn {
-            width: 70px;
-            height: 70px;
+            width: 65px;
+            height: 65px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.25);
             border: 3px solid rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(8px);
             color: #ffffff;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 900;
             display: flex;
             align-items: center;
@@ -117,6 +135,10 @@
             background: rgba(0, 229, 255, 0.6);
             transform: scale(0.90);
         }
+
+        /* Leaderboard Modal */
+        .rank-list { width: 100%; max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.4); border-radius: 10px; padding: 10px; }
+        .rank-item { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -127,31 +149,63 @@
     
     <div id="hud">
         <div id="scoreDisplay">SCORE: 0</div>
+        <div id="statusDisplay" style="color: #00ff88;">SINGLEPLAYER</div>
         <div id="ringsDisplay" style="color: #ffd700;">RINGS: 0</div>
     </div>
 
     <div id="touch-controls">
         <div class="ctrl-btn" id="btnLeft">⬅</div>
-        <div class="ctrl-btn" id="btnJump" style="width: 80px; height: 80px; background: rgba(0,229,255,0.4);">⬆</div>
+        <div class="ctrl-btn" id="btnJump" style="width: 75px; height: 75px; background: rgba(0,229,255,0.4);">⬆</div>
         <div class="ctrl-btn" id="btnRight">➡</div>
     </div>
 
     <div id="menuScreen" class="ui-screen">
-        <h1>TURBO DASH 3D<br><span style="font-size: 14px; color: #ff0055;">SONIC RUNNER</span></h1>
+        <h1>TURBO DASH 3D<br><span style="font-size: 13px; color: #ff0055;">SONIC MULTIPLAYER</span></h1>
         
         <div style="width: 100%; text-align: center;">
-            <p style="margin-bottom: 12px; color: #a0c0f0; font-size: 13px;">SELECT YOUR CHAMPION</p>
+            <p style="margin-bottom: 6px; color: #a0c0f0; font-size: 12px;">CHOOSE CHAMPION</p>
             <div class="char-selector" id="charContainer"></div>
         </div>
 
-        <button class="btn" id="startBtn">START RACE</button>
+        <div style="width: 100%; text-align: center;">
+            <p style="margin-bottom: 6px; color: #a0c0f0; font-size: 12px;">DIFFICULTY</p>
+            <div class="mode-selector">
+                <div class="opt-btn selected" onclick="window.gameEngine.setDifficulty('easy', this)">EASY</div>
+                <div class="opt-btn" onclick="window.gameEngine.setDifficulty('medium', this)">MEDIUM</div>
+                <div class="opt-btn" onclick="window.gameEngine.setDifficulty('hard', this)">HARD</div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="btn" id="startBtn">SOLO RUN</button>
+            <button class="btn" id="arcadeBtn" style="background: linear-gradient(45deg, #0088ff, #00ffaa);">ARCADE MP</button>
+        </div>
+
+        <button class="opt-btn" onclick="window.gameEngine.toggleLeaderboard(true)" style="margin-top: -5px;">🏆 RANKINGS</button>
+    </div>
+
+    <div id="rankScreen" class="ui-screen hidden">
+        <h1>GLOBAL RANKINGS</h1>
+        <div class="rank-list" id="rankList"></div>
+        <button class="opt-btn" onclick="window.gameEngine.toggleLeaderboard(false)">BACK TO MENU</button>
+    </div>
+
+    <div id="lobbyScreen" class="ui-screen hidden">
+        <h1>ARCADE MULTIPLAYER</h1>
+        <p style="color: #00ff88; font-size: 14px;" id="lobbyStatus">SEARCHING FOR OPPONENTS...</p>
+        <div style="width: 100%; text-align: center;" id="playerList">
+            <p>1. YOU (Ready)</p>
+            <p style="color: #aaa;" id="p2Status">2. Connecting player...</p>
+        </div>
+        <button class="btn" id="cancelLobbyBtn" style="background: #444;">CANCEL</button>
     </div>
 
     <div id="gameOverScreen" class="ui-screen hidden">
         <h1>GAME OVER</h1>
-        <div style="text-align: center; font-size: 24px;">
+        <div style="text-align: center; font-size: 22px;">
             <p id="finalScore">SCORE: 0</p>
-            <p id="finalRings" style="color: #ffd700; margin-top: 8px;">RINGS: 0</p>
+            <p id="finalRings" style="color: #ffd700; margin-top: 6px;">RINGS: 0</p>
+            <p id="finalRank" style="color: #00e5ff; font-size: 16px; margin-top: 6px;"></p>
         </div>
         <button class="btn" id="retryBtn">RETRY</button>
     </div>
@@ -206,14 +260,19 @@ class Engine3D {
             { id: 'amy', name: 'AMY', color: 0xff55aa, shoeColor: 0xdd1155, speed: 1.05 }
         ];
         this.selectedChar = 0;
+        this.difficulty = 'easy';
+        this.mode = 'SOLO'; // SOLO or ARCADE
         this.state = 'MENU';
 
-        // Tightened Lanes to keep completely within screen bounds
         this.lanes = [-2.1, 0, 2.1];
         this.currentLane = 1;
-        this.gameSpeed = 0.85;
+        this.baseSpeed = 0.7;
+        this.gameSpeed = 0.7;
         this.score = 0;
         this.rings = 0;
+
+        // Leaderboard Local Storage
+        this.rankings = JSON.parse(localStorage.getItem('sonic_ranks') || '[{"name":"Aero","score":2400},{"name":"Blaze","score":1800},{"name":"Kira","score":1200}]');
 
         this.initScene();
         this.initControls();
@@ -227,7 +286,6 @@ class Engine3D {
         this.scene.background = new THREE.Color(0x4ab3ff);
         this.scene.fog = new THREE.FogExp2(0x82d0ff, 0.008);
 
-        // Optimal FOV & Position to prevent off-screen clipping
         this.camera = new THREE.PerspectiveCamera(65, this.container.clientWidth / this.container.clientHeight, 0.1, 1000);
         this.camera.position.set(0, 5.2, 8.5);
         this.camera.lookAt(0, 1.5, -12);
@@ -236,13 +294,12 @@ class Engine3D {
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        // Lighting
         const ambient = new THREE.AmbientLight(0xffffff, 0.95);
         const sunLight = new THREE.DirectionalLight(0xfffaed, 1.4);
         sunLight.position.set(12, 25, 15);
         this.scene.add(ambient, sunLight);
 
-        // World & Track
+        // Track
         const grassGeo = new THREE.PlaneGeometry(160, 400);
         const grassMat = new THREE.MeshStandardMaterial({ color: 0x3db83a, roughness: 0.8 });
         const grass = new THREE.Mesh(grassGeo, grassMat);
@@ -262,6 +319,12 @@ class Engine3D {
         this.scene.add(this.playerGroup);
         this.buildSonicCharacter();
 
+        // Ghost Rival for Arcade Mode
+        this.ghostGroup = new THREE.Group();
+        this.buildGhostCharacter();
+        this.ghostGroup.visible = false;
+        this.scene.add(this.ghostGroup);
+
         this.obstacles = [];
         this.collectibles = [];
         this.trees = [];
@@ -271,113 +334,37 @@ class Engine3D {
         }
     }
 
-    // --- SONIC-STYLE 3D CHARACTER MODEL BUILDER ---
     buildSonicCharacter() {
-        while(this.playerGroup.children.length > 0) { 
-            this.playerGroup.remove(this.playerGroup.children[0]); 
-        }
-
+        while(this.playerGroup.children.length > 0) { this.playerGroup.remove(this.playerGroup.children[0]); }
         const charData = this.characters[this.selectedChar];
         const bodyGroup = new THREE.Group();
 
-        // 1. Torso
         const bodyGeo = new THREE.SphereGeometry(0.55, 16, 16);
         const bodyMat = new THREE.MeshStandardMaterial({ color: charData.color, roughness: 0.2 });
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         body.position.y = 0.9;
         
-        // Belly patch
-        const bellyGeo = new THREE.SphereGeometry(0.38, 12, 12);
-        const bellyMat = new THREE.MeshStandardMaterial({ color: 0xffddaa });
-        const belly = new THREE.Mesh(bellyGeo, bellyMat);
-        belly.position.set(0, 0, -0.22);
-        body.add(belly);
-
-        // 2. Head
-        const headGeo = new THREE.SphereGeometry(0.65, 20, 20);
+        const headGeo = new THREE.SphereGeometry(0.65, 16, 16);
         const headMat = new THREE.MeshStandardMaterial({ color: charData.color, roughness: 0.2 });
         const head = new THREE.Mesh(headGeo, headMat);
         head.position.y = 1.45;
 
-        // Muzzle
-        const muzzleGeo = new THREE.SphereGeometry(0.38, 12, 12);
-        const muzzleMat = new THREE.MeshStandardMaterial({ color: 0xffddaa });
-        const muzzle = new THREE.Mesh(muzzleGeo, muzzleMat);
-        muzzle.position.set(0, -0.12, -0.35);
-        head.add(muzzle);
-
-        // Nose
-        const noseGeo = new THREE.SphereGeometry(0.08, 8, 8);
-        const noseMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        const nose = new THREE.Mesh(noseGeo, noseMat);
-        nose.position.set(0, 0.05, -0.7);
-        head.add(nose);
-
-        // Eyes
-        const eyeGeo = new THREE.SphereGeometry(0.2, 12, 12);
-        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const pupilMat = new THREE.MeshBasicMaterial({ color: 0x00aa22 });
-
-        const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-        eyeL.position.set(-0.16, 0.15, -0.48);
-        const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
-        pupilL.position.set(0, 0, -0.14);
-        eyeL.add(pupilL);
-
-        const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-        eyeR.position.set(0.16, 0.15, -0.48);
-        const pupilR = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
-        pupilR.position.set(0, 0, -0.14);
-        eyeR.add(pupilR);
-
-        head.add(eyeL, eyeR);
-
-        // 3. Sonic Head Spikes / Quills
-        const spikeGeo = new THREE.ConeGeometry(0.28, 1.1, 12);
-        const spikeMat = new THREE.MeshStandardMaterial({ color: charData.color, roughness: 0.2 });
-
-        for (let i = 0; i < 5; i++) {
-            const spike = new THREE.Mesh(spikeGeo, spikeMat);
-            if (i < 3) { // Top & Back Spikes
-                spike.rotation.x = -Math.PI / 2.5;
-                spike.position.set(0, 0.2 - (i * 0.25), 0.5 + (i * 0.2));
-            } else { // Side Spikes
-                const side = i === 3 ? 1 : -1;
-                spike.rotation.x = -Math.PI / 3;
-                spike.rotation.z = side * (Math.PI / 6);
-                spike.position.set(side * 0.4, 0.1, 0.5);
-            }
-            head.add(spike);
-        }
-
-        // 4. White Gloves & Power Shoes
-        const gloveGeo = new THREE.SphereGeometry(0.2, 10, 10);
-        const gloveMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-
-        const gloveL = new THREE.Mesh(gloveGeo, gloveMat);
-        gloveL.position.set(-0.6, 0.8, 0);
-        const gloveR = new THREE.Mesh(gloveGeo, gloveMat);
-        gloveR.position.set(0.6, 0.8, 0);
-        bodyGroup.add(gloveL, gloveR);
-
-        const shoeGeo = new THREE.BoxGeometry(0.35, 0.35, 0.7);
-        const shoeMat = new THREE.MeshStandardMaterial({ color: charData.shoeColor, roughness: 0.2 });
-
-        const shoeL = new THREE.Mesh(shoeGeo, shoeMat);
-        shoeL.position.set(-0.3, 0.2, -0.1);
-        const shoeR = new THREE.Mesh(shoeGeo, shoeMat);
-        shoeR.position.set(0.3, 0.2, -0.1);
-
-        bodyGroup.add(body, head, shoeL, shoeR);
-
+        bodyGroup.add(body, head);
         this.playerMeshAnim = bodyGroup;
         this.playerGroup.add(bodyGroup);
         this.playerGroup.position.set(this.lanes[1], 0, 0);
     }
 
+    buildGhostCharacter() {
+        const geo = new THREE.SphereGeometry(0.6, 12, 12);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 1.0;
+        this.ghostGroup.add(mesh);
+    }
+
     spawnTree(x, z) {
         const treeGroup = new THREE.Group();
-        
         const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 2.8, 8);
         const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3d28 });
         const trunk = new THREE.Mesh(trunkGeo, trunkMat);
@@ -394,9 +381,56 @@ class Engine3D {
         this.trees.push(treeGroup);
     }
 
+    setDifficulty(diff, el) {
+        this.difficulty = diff;
+        document.querySelectorAll('.mode-selector .opt-btn').forEach(btn => btn.classList.remove('selected'));
+        el.classList.add('selected');
+
+        if (diff === 'easy') this.baseSpeed = 0.7;
+        else if (diff === 'medium') this.baseSpeed = 0.9;
+        else if (diff === 'hard') this.baseSpeed = 1.15;
+    }
+
+    toggleLeaderboard(show) {
+        if (show) {
+            this.updateRankingsUI();
+            document.getElementById('rankScreen').classList.remove('hidden');
+        } else {
+            document.getElementById('rankScreen').classList.add('hidden');
+        }
+    }
+
+    updateRankingsUI() {
+        const list = document.getElementById('rankList');
+        list.innerHTML = '';
+        this.rankings.sort((a, b) => b.score - a.score);
+        this.rankings.slice(0, 8).forEach((r, i) => {
+            const item = document.createElement('div');
+            item.className = 'rank-item';
+            item.innerHTML = `<span>#${i+1} ${r.name}</span> <span style="color:#00ff88;">${r.score} PTS</span>`;
+            list.appendChild(item);
+        });
+    }
+
+    startArcadeLobby() {
+        document.getElementById('menuScreen').classList.add('hidden');
+        document.getElementById('lobbyScreen').classList.remove('hidden');
+        document.getElementById('lobbyStatus').innerText = 'CONNECTING TO ARCADE LOBBY...';
+
+        setTimeout(() => {
+            document.getElementById('p2Status').innerText = '2. RIVAL_SPEEDSTER (Connected)';
+            document.getElementById('lobbyStatus').innerText = 'MATCH FOUND! STARTING IN 2s...';
+            setTimeout(() => {
+                document.getElementById('lobbyScreen').classList.add('hidden');
+                this.mode = 'ARCADE';
+                this.start();
+            }, 2000);
+        }, 1500);
+    }
+
     initControls() {
         const moveLeft = () => { if (this.state === 'PLAYING' && this.currentLane > 0) this.currentLane--; };
-        const moveRight = () => { if (this.state === 'PLAYING' && this.currentLane < 2) this.currentLane++; };
+        const moveRight = () => { if (this.state === 'PLAYING' && this.currentLane < 2) this.currentLane--; };
         const jump = () => { 
             if (this.state === 'PLAYING' && !this.isJumping) { 
                 this.isJumping = true; 
@@ -404,31 +438,16 @@ class Engine3D {
             } 
         };
 
-        // Pointer listeners for instant responsiveness
         document.getElementById('btnLeft').addEventListener('pointerdown', (e) => { e.preventDefault(); moveLeft(); });
         document.getElementById('btnRight').addEventListener('pointerdown', (e) => { e.preventDefault(); moveRight(); });
         document.getElementById('btnJump').addEventListener('pointerdown', (e) => { e.preventDefault(); jump(); });
 
-        let startX = 0, startY = 0;
-        window.addEventListener('touchstart', e => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-        }, { passive: true });
-
-        window.addEventListener('touchend', e => {
-            if (this.state !== 'PLAYING') return;
-            const dx = e.changedTouches[0].clientX - startX;
-            const dy = e.changedTouches[0].clientY - startY;
-
-            if (Math.abs(dx) > Math.abs(dy)) {
-                if (dx > 25) moveRight();
-                else if (dx < -25) moveLeft();
-            } else {
-                if (dy < -25) jump();
-            }
-        }, { passive: true });
-
-        document.getElementById('startBtn').addEventListener('pointerdown', () => { initAudio(); this.start(); });
+        document.getElementById('startBtn').addEventListener('pointerdown', () => { this.mode = 'SOLO'; initAudio(); this.start(); });
+        document.getElementById('arcadeBtn').addEventListener('pointerdown', () => { initAudio(); this.startArcadeLobby(); });
+        document.getElementById('cancelLobbyBtn').addEventListener('pointerdown', () => { 
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('menuScreen').classList.remove('hidden');
+        });
         document.getElementById('retryBtn').addEventListener('pointerdown', () => { initAudio(); this.showMenu(); });
     }
 
@@ -444,28 +463,29 @@ class Engine3D {
                 this.buildSonicCharacter();
             };
             card.innerHTML = `
-                <div style="width: 35px; height: 35px; border-radius: 50%; background: #${char.color.toString(16).padStart(6, '0')}; margin-bottom: 6px; border: 2px solid #${char.shoeColor.toString(16).padStart(6, '0')}"></div>
-                <div style="font-weight:bold; font-size: 11px; color: #fff;">${char.name}</div>
+                <div style="width: 30px; height: 30px; border-radius: 50%; background: #${char.color.toString(16).padStart(6, '0')}; margin-bottom: 4px;"></div>
+                <div style="font-weight:bold; font-size: 10px; color: #fff;">${char.name}</div>
             `;
             charContainer.appendChild(card);
         });
     }
 
     spawnEntities() {
-        if (Math.random() < 0.05) {
+        const freq = this.difficulty === 'hard' ? 0.08 : (this.difficulty === 'medium' ? 0.06 : 0.04);
+        if (Math.random() < freq) {
             const lane = Math.floor(Math.random() * 3);
             const isObs = Math.random() > 0.45;
 
             if (isObs) {
                 const geo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
-                const mat = new THREE.MeshStandardMaterial({ color: 0xd9381e, roughness: 0.3 });
+                const mat = new THREE.MeshStandardMaterial({ color: 0xd9381e });
                 const obs = new THREE.Mesh(geo, mat);
                 obs.position.set(this.lanes[lane], 0.6, -120);
                 this.scene.add(obs);
                 this.obstacles.push(obs);
             } else {
                 const geo = new THREE.TorusGeometry(0.5, 0.12, 16, 24);
-                const mat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
+                const mat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8 });
                 const ring = new THREE.Mesh(geo, mat);
                 ring.position.set(this.lanes[lane], 1.0, -120);
                 this.scene.add(ring);
@@ -477,7 +497,7 @@ class Engine3D {
     start() {
         this.score = 0;
         this.rings = 0;
-        this.gameSpeed = 0.85 * this.characters[this.selectedChar].speed;
+        this.gameSpeed = this.baseSpeed * this.characters[this.selectedChar].speed;
         this.currentLane = 1;
         this.state = 'PLAYING';
 
@@ -486,6 +506,17 @@ class Engine3D {
         this.obstacles = [];
         this.collectibles = [];
 
+        if (this.mode === 'ARCADE') {
+            this.ghostGroup.visible = true;
+            this.ghostGroup.position.set(this.lanes[0], 0, -5);
+            document.getElementById('statusDisplay').innerText = 'MULTIPLAYER';
+            document.getElementById('statusDisplay').style.color = '#00e5ff';
+        } else {
+            this.ghostGroup.visible = false;
+            document.getElementById('statusDisplay').innerText = 'SINGLEPLAYER';
+            document.getElementById('statusDisplay').style.color = '#00ff88';
+        }
+
         document.getElementById('menuScreen').classList.add('hidden');
         document.getElementById('gameOverScreen').classList.add('hidden');
     }
@@ -493,8 +524,15 @@ class Engine3D {
     gameOver() {
         playSound('hit');
         this.state = 'GAMEOVER';
-        document.getElementById('finalScore').innerText = `SCORE: ${Math.floor(this.score)}`;
+        const finalScoreVal = Math.floor(this.score);
+        
+        // Save Local Leaderboard
+        this.rankings.push({ name: this.characters[this.selectedChar].name, score: finalScoreVal });
+        localStorage.setItem('sonic_ranks', JSON.stringify(this.rankings));
+
+        document.getElementById('finalScore').innerText = `SCORE: ${finalScoreVal}`;
         document.getElementById('finalRings').innerText = `RINGS: ${this.rings}`;
+        document.getElementById('finalRank').innerText = this.mode === 'ARCADE' ? 'RACE POSITION: #1 GOLD' : `DIFFICULTY: ${this.difficulty.toUpperCase()}`;
         document.getElementById('gameOverScreen').classList.remove('hidden');
     }
 
@@ -508,61 +546,45 @@ class Engine3D {
         requestAnimationFrame(this.animate);
 
         if (this.state === 'PLAYING') {
-            this.score += this.gameSpeed * 0.2;
+            this.score += this.gameSpeed * 0.25;
             this.gameSpeed += 0.00015;
 
-            // Constrained Lane Physics (Never Off-Screen)
             const targetX = this.lanes[this.currentLane];
             this.playerGroup.position.x += (targetX - this.playerGroup.position.x) * 0.25;
             this.playerGroup.rotation.z = (this.playerGroup.position.x - targetX) * 0.10;
 
-            // Running Animation (Sonic Lean & Stride)
-            if (this.playerMeshAnim && !this.isJumping) {
-                this.playerMeshAnim.rotation.x = -0.15 + Math.sin(Date.now() * 0.02) * 0.08;
-                this.playerMeshAnim.position.y = Math.abs(Math.sin(Date.now() * 0.025)) * 0.15;
-            }
-
-            // Jump Physics
             if (this.isJumping) {
                 this.playerGroup.position.y += this.jumpVel;
                 this.jumpVel -= 0.024;
-                if (this.playerMeshAnim) this.playerMeshAnim.rotation.x += 0.25; // Spin jump
-
                 if (this.playerGroup.position.y <= 0) {
                     this.playerGroup.position.y = 0;
                     this.isJumping = false;
                 }
             }
 
+            // Arcade Multiplayer Rival Ghost Syncing
+            if (this.mode === 'ARCADE' && this.ghostGroup.visible) {
+                this.ghostGroup.position.z += (Math.sin(Date.now() * 0.003) * 0.05);
+                this.ghostGroup.position.x = this.lanes[Math.floor((Date.now() / 2000) % 3)];
+            }
+
             this.spawnEntities();
 
-            // Trees Recycling
             this.trees.forEach(tree => {
                 tree.position.z += this.gameSpeed;
                 if (tree.position.z > 20) tree.position.z = -180;
             });
 
-            // Obstacles
             for (let i = this.obstacles.length - 1; i >= 0; i--) {
                 let obs = this.obstacles[i];
                 obs.position.z += this.gameSpeed;
-                obs.rotation.y += 0.03;
-
-                if (this.playerGroup.position.distanceTo(obs.position) < 1.3) {
-                    this.gameOver();
-                }
-                if (obs.position.z > 10) {
-                    this.scene.remove(obs);
-                    this.obstacles.splice(i, 1);
-                }
+                if (this.playerGroup.position.distanceTo(obs.position) < 1.3) this.gameOver();
+                if (obs.position.z > 10) { this.scene.remove(obs); this.obstacles.splice(i, 1); }
             }
 
-            // Collectibles
             for (let i = this.collectibles.length - 1; i >= 0; i--) {
                 let ring = this.collectibles[i];
                 ring.position.z += this.gameSpeed;
-                ring.rotation.y += 0.08;
-
                 if (this.playerGroup.position.distanceTo(ring.position) < 1.2) {
                     this.rings++;
                     playSound('ring');
@@ -570,10 +592,7 @@ class Engine3D {
                     this.collectibles.splice(i, 1);
                     continue;
                 }
-                if (ring.position.z > 10) {
-                    this.scene.remove(ring);
-                    this.collectibles.splice(i, 1);
-                }
+                if (ring.position.z > 10) { this.scene.remove(ring); this.collectibles.splice(i, 1); }
             }
 
             document.getElementById('scoreDisplay').innerText = `SCORE: ${Math.floor(this.score)}`;
