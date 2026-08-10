@@ -7,20 +7,17 @@ workflows:
       node: 18.16.0
       java: 17
     scripts:
-      - name: Install Dependencies
+      - name: Prepare Web Assets & Capacitor Config
         script: |
           npm install -g @capacitor/cli @capacitor/core
-          npm init -y
-          npm install @capacitor/android
-          
-      - name: Initialize Capacitor & Add Android
-        script: |
           mkdir -p www
           cp index.html www/
-          npx cap init "Sonic Turbo Dash 3D" "com.turbodash.game3d" --web-dir www
+          
+      - name: Add Android Platform
+        script: |
           npx cap add android
           
-          # Copy custom icon if uploaded
+          # Copy icon to Android resources if present
           if [ -f "assets/icon.png" ]; then
             mkdir -p android/app/src/main/res/mipmap-hdpi
             cp assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
