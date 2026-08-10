@@ -1,0 +1,6 @@
+{
+  "appId": "com.turbodash.game3d",
+  "appName": "Sonic Turbo Dash 3D",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
