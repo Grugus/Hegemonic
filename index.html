@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sonic Turbo Dash 3D</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #05070f; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        #game-container { position: relative; width: 100vw; height: 100vh; max-width: 540px; max-height: 960px; margin: 0 auto; overflow: hidden; }
+        #canvas3d { width: 100%; height: 100%; display: block; }
+        .ui-screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 50px 20px; background: rgba(5, 7, 15, 0.88); backdrop-filter: blur(10px); color: #fff; z-index: 10; }
+        .hidden { display: none !important; }
+        h1 { font-size: 30px; font-weight: 900; color: #00e5ff; text-shadow: 0 0 15px #00e5ff; text-align: center; letter-spacing: 1px; }
+        .char-selector { display: flex; gap: 12px; width: 100%; overflow-x: auto; padding: 10px 0; }
+        .char-card { flex: 0 0 95px; height: 115px; background: #12192c; border: 2px solid #2d3b61; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .char-card.selected { border-color: #00ff88; box-shadow: 0 0 18px #00ff88; background: #1a2a4a; transform: scale(1.04); }
+        .btn { background: linear-gradient(45deg, #ff0055, #ff5500); border: none; padding: 16px 45px; color: white; font-size: 20px; font-weight: 800; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 20px rgba(255, 0, 85, 0.5); text-transform: uppercase; }
+        .btn:active { transform: scale(0.96); }
+        #hud { position: absolute; top: 25px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; color: #fff; font-size: 20px; font-weight: 800; pointer-events: none; z-index: 5; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="canvas3d"></canvas>
+    
+    <div id="hud">
+        <div id="scoreDisplay">SCORE: 0</div>
+        <div id="ringsDisplay" style="color: #ffd700;">RINGS: 0</div>
+    </div>
+
+    <div id="menuScreen" class="ui-screen">
+        <h1>TURBO DASH 3D<br><span style="font-size: 15px; color: #ff0055;">MOBILE ARCADE</span></h1>
+        
+        <div style="width: 100%; text-align: center;">
+            <p style="margin-bottom: 12px; color: #8a9bbd; font-size: 13px;">SELECT YOUR CHAMPION</p>
+            <div class="char-selector" id="charContainer"></div>
+        </div>
+
+        <button class="btn" onclick="window.gameEngine.start()">START RACE</button>
+    </div>
+
+    <div id="gameOverScreen" class="ui-screen hidden">
+        <h1>GAME OVER</h1>
+        <div style="text-align: center; font-size: 24px;">
+            <p id="finalScore">SCORE: 0</p>
+            <p id="finalRings" style="color: #ffd700; margin-top: 8px;">RINGS: 0</p>
+        </div>
+        <button class="btn" onclick="window.gameEngine.showMenu()">RETRY</button>
+    </div>
+</div>
+
+<script>
+// --- AUDIO SYNTHESIZER ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'ring') {
+        osc.frequency.setValueAtTime(987.77, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+    } else if (type === 'hit') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
+}
+
+// --- 3D ENGINE CLASS ---
+class Engine3D {
+    constructor() {
+        this.container = document.getElementById('game-container');
+        this.canvas = document.getElementById('canvas3d');
+        
+        this.characters = [
+            { id: 'aero', name: 'AERO', color: 0x0088ff, accent: 0xffffff, speed: 1.2 },
+            { id: 'kira', name: 'KIRA', color: 0xaa00ff, accent: 0xffff00, speed: 1.0 },
+            { id: 'roco', name: 'ROCO', color: 0xff8800, accent: 0x552200, speed: 0.9 },
+            { id: 'luna', name: 'LUNA', color: 0x00ff66, accent: 0x885522, speed: 1.0 },
+            { id: 'blaze', name: 'BLAZE', color: 0xff0033, accent: 0xffcc00, speed: 1.3 }
+        ];
+        this.selectedChar = 0;
+        this.state = 'MENU';
+
+        this.lanes = [-3.2, 0, 3.2];
+        this.currentLane = 1;
+        this.gameSpeed = 0.8;
+        this.score = 0;
+        this.rings = 0;
+
+        this.initScene();
+        this.initPostProcessing();
+        this.initControls();
+        this.renderUI();
+        this.animate = this.animate.bind(this);
+        requestAnimationFrame(this.animate);
+    }
+
+    initScene() {
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(0x05070f, 0.012);
+
+        this.camera = new THREE.PerspectiveCamera(60, 540 / 960, 0.1, 1000);
+        this.camera.position.set(0, 5.5, 9);
+        this.camera.lookAt(0, 1.5, -10);
+
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: "high-performance" });
+        this.renderer.setSize(540, 960);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+        const dirLight = new THREE.DirectionalLight(0x00ffff, 1.2);
+        dirLight.position.set(5, 20, 10);
+        this.scene.add(ambient, dirLight);
+
+        // Track
+        const trackGeo = new THREE.PlaneGeometry(10, 300);
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0x0d1326, roughness: 0.2, metalness: 0.5 });
+        this.track = new THREE.Mesh(trackGeo, trackMat);
+        this.track.rotation.x = -Math.PI / 2;
+        this.track.position.z = -100;
+        this.scene.add(this.track);
+
+        // Player Group
+        this.playerGroup = new THREE.Group();
+        this.scene.add(this.playerGroup);
+        this.buildPlayerModel();
+
+        this.obstacles = [];
+        this.collectibles = [];
+    }
+
+    initPostProcessing() {
+        this.composer = new THREE.EffectComposer(this.renderer);
+        const renderPass = new THREE.RenderPass(this.scene, this.camera);
+        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(540, 960), 0.7, 0.4, 0.85);
+        this.composer.addPass(renderPass);
+        this.composer.addPass(bloomPass);
+    }
+
+    buildPlayerModel() {
+        while(this.playerGroup.children.length > 0) { 
+            this.playerGroup.remove(this.playerGroup.children[0]); 
+        }
+
+        const charData = this.characters[this.selectedChar];
+
+        const bodyGeo = new THREE.SphereGeometry(1, 32, 32);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: charData.color, roughness: 0.1, metalness: 0.6 });
+        const mesh = new THREE.Mesh(bodyGeo, bodyMat);
+        
+        const crestGeo = new THREE.ConeGeometry(0.4, 1.2, 16);
+        const crestMat = new THREE.MeshBasicMaterial({ color: charData.accent });
+        const crest = new THREE.Mesh(crestGeo, crestMat);
+        crest.rotation.x = -Math.PI / 3;
+        crest.position.set(0, 0.4, 0.6);
+        
+        mesh.add(crest);
+        this.playerGroup.add(mesh);
+        this.playerGroup.position.set(this.lanes[1], 1, 0);
+    }
+
+    initControls() {
+        let startX = 0, startY = 0;
+        window.addEventListener('touchstart', e => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+
+        window.addEventListener('touchend', e => {
+            if (this.state !== 'PLAYING') return;
+            const dx = e.changedTouches[0].clientX - startX;
+            const dy = e.changedTouches[0].clientY - startY;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 30 && this.currentLane < 2) this.currentLane++;
+                else if (dx < -30 && this.currentLane > 0) this.currentLane--;
+            } else {
+                if (dy < -30 && !this.isJumping) {
+                    this.isJumping = true;
+                    this.jumpVel = 0.38;
+                }
+            }
+        });
+    }
+
+    renderUI() {
+        const charContainer = document.getElementById('charContainer');
+        charContainer.innerHTML = '';
+        this.characters.forEach((char, i) => {
+            const card = document.createElement('div');
+            card.className = `char-card ${i === this.selectedChar ? 'selected' : ''}`;
+            card.onclick = () => {
+                this.selectedChar = i;
+                this.renderUI();
+                this.buildPlayerModel();
+            };
+            card.innerHTML = `
+                <div style="width: 35px; height: 35px; border-radius: 50%; background: #${char.color.toString(16).padStart(6, '0')}; margin-bottom: 6px;"></div>
+                <div style="font-weight:bold; font-size: 12px; color: #fff;">${char.name}</div>
+            `;
+            charContainer.appendChild(card);
+        });
+    }
+
+    spawnEntities() {
+        if (Math.random() < 0.06) {
+            const lane = Math.floor(Math.random() * 3);
+            const isObs = Math.random() > 0.35;
+
+            if (isObs) {
+                const geo = new THREE.OctahedronGeometry(0.9);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.2 });
+                const obs = new THREE.Mesh(geo, mat);
+                obs.position.set(this.lanes[lane], 0.9, -120);
+                this.scene.add(obs);
+                this.obstacles.push(obs);
+            } else {
+                const geo = new THREE.TorusGeometry(0.6, 0.15, 16, 32);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
+                const ring = new THREE.Mesh(geo, mat);
+                ring.position.set(this.lanes[lane], 1.0, -120);
+                this.scene.add(ring);
+                this.collectibles.push(ring);
+            }
+        }
+    }
+
+    start() {
+        this.score = 0;
+        this.rings = 0;
+        this.gameSpeed = 0.8 * this.characters[this.selectedChar].speed;
+        this.currentLane = 1;
+        this.state = 'PLAYING';
+
+        this.obstacles.forEach(o => this.scene.remove(o));
+        this.collectibles.forEach(c => this.scene.remove(c));
+        this.obstacles = [];
+        this.collectibles = [];
+
+        document.getElementById('menuScreen').classList.add('hidden');
+        document.getElementById('gameOverScreen').classList.add('hidden');
+    }
+
+    gameOver() {
+        playSound('hit');
+        this.state = 'GAMEOVER';
+        document.getElementById('finalScore').innerText = `SCORE: ${Math.floor(this.score)}`;
+        document.getElementById('finalRings').innerText = `RINGS: ${this.rings}`;
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+    }
+
+    showMenu() {
+        this.state = 'MENU';
+        document.getElementById('menuScreen').classList.remove('hidden');
+        document.getElementById('gameOverScreen').classList.add('hidden');
+    }
+
+    animate() {
+        requestAnimationFrame(this.animate);
+
+        if (this.state === 'PLAYING') {
+            this.score += this.gameSpeed * 0.2;
+            this.gameSpeed += 0.00015;
+
+            const targetX = this.lanes[this.currentLane];
+            this.playerGroup.position.x += (targetX - this.playerGroup.position.x) * 0.22;
+            this.playerGroup.rotation.z = (this.playerGroup.position.x - targetX) * 0.15;
+            this.playerGroup.rotation.x += this.gameSpeed * 0.2;
+
+            if (this.isJumping) {
+                this.playerGroup.position.y += this.jumpVel;
+                this.jumpVel -= 0.022;
+                if (this.playerGroup.position.y <= 1.0) {
+                    this.playerGroup.position.y = 1.0;
+                    this.isJumping = false;
+                }
+            }
+
+            this.spawnEntities();
+
+            // Obstacles
+            for (let i = this.obstacles.length - 1; i >= 0; i--) {
+                let obs = this.obstacles[i];
+                obs.position.z += this.gameSpeed;
+                obs.rotation.y += 0.04;
+
+                if (this.playerGroup.position.distanceTo(obs.position) < 1.5) {
+                    this.gameOver();
+                }
+                if (obs.position.z > 10) {
+                    this.scene.remove(obs);
+                    this.obstacles.splice(i, 1);
+                }
+            }
+
+            // Rings
+            for (let i = this.collectibles.length - 1; i >= 0; i--) {
+                let ring = this.collectibles[i];
+                ring.position.z += this.gameSpeed;
+                ring.rotation.y += 0.08;
+
+                if (this.playerGroup.position.distanceTo(ring.position) < 1.4) {
+                    this.rings++;
+                    playSound('ring');
+                    this.scene.remove(ring);
+                    this.collectibles.splice(i, 1);
+                    continue;
+                }
+                if (ring.position.z > 10) {
+                    this.scene.remove(ring);
+                    this.collectibles.splice(i, 1);
+                }
+            }
+
+            document.getElementById('scoreDisplay').innerText = `SCORE: ${Math.floor(this.score)}`;
+            document.getElementById('ringsDisplay').innerText = `RINGS: ${this.rings}`;
+        }
+
+        this.composer.render();
+    }
+}
+
+window.onload = () => { window.gameEngine = new Engine3D(); };
+</script>
+</body>
+</html>
