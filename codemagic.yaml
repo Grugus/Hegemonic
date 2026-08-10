@@ -1,28 +1,37 @@
 workflows:
   android-apk-build:
     name: Build Android Debug APK
-    max_build_duration: 30
     instance_type: mac_mini_m1
+    max_build_duration: 30
     environment:
       node: 18.16.0
       java: 17
     scripts:
       - name: Install Dependencies
         script: |
-          npm install -g @capacitor/cli @capacitor/core
+          npm install -g @capacitor/cli @capacitor/core @capacitor/assets
           npm init -y
-          npm install @capacitor/android
-      - name: Initialize Capacitor & Add Android
+          npm install @capacitor/android @capacitor/assets
+          
+      - name: Initialize Capacitor, Generate App Icons & Add Android
         script: |
           mkdir -p www
           cp index.html www/
           npx cap init "Sonic Turbo Dash 3D" "com.turbodash.game3d" --web-dir www
           npx cap add android
+          
+          # Generate app launcher icons if assets folder exists
+          if [ -d "assets" ]; then
+            npx @capacitor/assets generate --android
+          fi
+          
           npx cap sync android
+
       - name: Build Android APK
         script: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
+
     artifacts:
       - android/app/build/outputs/apk/debug/*.apk
