@@ -9,22 +9,25 @@ workflows:
     scripts:
       - name: Install Dependencies
         script: |
-          npm install -g @capacitor/cli @capacitor/core @capacitor/assets
+          npm install -g @capacitor/cli @capacitor/core
           npm init -y
-          npm install @capacitor/android @capacitor/assets
+          npm install @capacitor/android
           
-      - name: Initialize Capacitor, Generate App Icons & Add Android
+      - name: Initialize Capacitor & Add Android
         script: |
           mkdir -p www
           cp index.html www/
           npx cap init "Sonic Turbo Dash 3D" "com.turbodash.game3d" --web-dir www
           npx cap add android
           
-          # Generate app launcher icons if assets folder exists
-          if [ -d "assets" ]; then
-            npx @capacitor/assets generate --android
+          # Copy custom icon if uploaded
+          if [ -f "assets/icon.png" ]; then
+            mkdir -p android/app/src/main/res/mipmap-hdpi
+            cp assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+            cp assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+            cp assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png
           fi
-          
+
           npx cap sync android
 
       - name: Build Android APK
