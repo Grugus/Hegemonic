@@ -4,12 +4,12 @@ workflows:
     instance_type: mac_mini_m1
     max_build_duration: 30
     environment:
-      node: 18.16.0
+      node: 22.11.0
       java: 17
     scripts:
       - name: Prepare Web Assets & Capacitor Config
         script: |
-          npm install -g @capacitor/cli @capacitor/core
+          npm install -g @capacitor/cli@6 @capacitor/core@6
           mkdir -p www
           cp index.html www/
           
@@ -17,7 +17,7 @@ workflows:
         script: |
           npx cap add android
           
-          # Copy icon to Android resources if present
+          # Copy custom icon if available
           if [ -f "assets/icon.png" ]; then
             mkdir -p android/app/src/main/res/mipmap-hdpi
             cp assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
